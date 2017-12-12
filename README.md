@@ -25,6 +25,7 @@ or Yarn:
 More robust documentation will hopefully be coming soon.. 🤠
 
 ```js
+import React from 'react';
 import CanvasImageScrubber from 'canvas-image-scrubber';
 export function getFrames() {
   let i = 1;
