@@ -1,6 +1,6 @@
 # canvas-image-scrubber
 
-[![npm package][npm-badge]][npm]
+[![npm version](https://badge.fury.io/js/canvas-image-scrubber.svg)](https://badge.fury.io/js/canvas-image-scrubber)
 
 A react component to render video-like playback for image sequences 🎥.
 
