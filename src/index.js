@@ -13,7 +13,7 @@ const preloadImage = (src, callback) => {
 export default class Viewer extends Component {
   static propTypes = {
     audioSource: PropTypes.string,
-    frames: PropTypes.arrayOf(PropTypes.string),
+    frames: PropTypes.arrayOf(PropTypes.string).isRequired,
     render: PropTypes.func.isRequired,
   }
 
