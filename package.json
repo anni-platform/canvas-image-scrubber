@@ -1,6 +1,6 @@
 {
   "name": "canvas-image-scrubber",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "canvas-image-scrubber React component",
   "main": "lib/index.js",
   "module": "es/index.js",
