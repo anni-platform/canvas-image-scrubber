@@ -42,11 +42,7 @@ function MyApp() {
   render() {
     <CanvasImageScrubber
       frames={frames}
-      render={({
-        getViewerControlsProps,
-        getViewerProgressProps,
-        renderViewer,
-      }) => {
+      render={({ renderViewer }) => {
         return (
           <div>
             {renderViewer}
