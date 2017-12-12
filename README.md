@@ -4,6 +4,8 @@
 
 A react component to render video-like playback for image sequences 🎥.
 
+[View Demo](https://anni-platform.github.io/canvas-image-scrubber/)
+
 ## Installation
 
 Via NPM:
