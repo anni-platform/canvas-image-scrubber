@@ -19,7 +19,7 @@ export default class Viewer extends Component {
 
   constructor(props) {
     super(props);
-
+    const { frames } = props;
     this.state = {
       audioReady: false,
       currentFrame: 0,
@@ -31,6 +31,11 @@ export default class Viewer extends Component {
       enableDraw: false,
       playAudio: true,
       volume: .5,
+      loadingProgress: {
+        loadingComplete: false,
+        totalLoaded: 0,
+        totalFramesToLoad: frames.length,
+      },
     };
     window.onkeydown = this.handleKeydown;
   }
@@ -48,12 +53,23 @@ export default class Viewer extends Component {
     let htmlImageElements = [];
     frames.forEach((frame, index) => {
       preloadImage(frame, img => {
+        this.setState({
+          loadingProgress: {
+            ...this.state.loadingProgress,
+            totalLoaded: htmlImageElements.length,
+          }
+        });
+        this.ctx.drawImage(img, 0, 0, img.width, img.height);
         // ensure order is correct
         htmlImageElements.splice(index, 0, img);
-        if (index === frames.length - 1) {
+        if (index === frames.length - 1 || htmlImageElements.length === frames.length) {
           this.setState({
             loading: false,
             htmlImageElements,
+            loadingProgress: {
+              ...this.state.loadingProgress,
+              loadingComplete: true,
+            }
           }, () => {
             this.drawFrame();
           });
@@ -237,6 +253,7 @@ export default class Viewer extends Component {
       fps,
       playAudio,
       volume,
+      loadingProgress,
     } = this.state || {};
     const {
       audioSource,
@@ -276,6 +293,7 @@ export default class Viewer extends Component {
       ...this.state,
       getViewerProgressProps,
       getViewerControlsProps,
+      loadingProgress,
       renderAudio,
       renderViewer,
     });

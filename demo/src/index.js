@@ -3,7 +3,7 @@ import {render} from 'react-dom';
 import CanvasImageScrubber from '../../src';
 import Controls from './Controls';
 import ProgressBar from './ProgressBar';
-
+import LoadingProgress from './LoadingProgress';
 
 export function getFrames() {
   let i = 1;
@@ -25,10 +25,12 @@ class Demo extends Component {
         render={({
           getViewerControlsProps,
           getViewerProgressProps,
+          loadingProgress,
           renderViewer,
         }) => {
           return (
             <div>
+              <LoadingProgress {...loadingProgress} />
               <Controls {...getViewerControlsProps()} />
               <div style={{ maxWidth: 274 }}>
                 {renderViewer}
