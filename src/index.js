@@ -49,7 +49,9 @@ export default class Viewer extends Component {
       frames,
     } = this.props;
     this.ctx = this.canvas.getContext('2d');
-
+    this.spriteSheetCanvasCtx = this.spriteSheetCanvas.getContext('2d');
+    this.outputCanvas = document.createElement('canvas');
+    this.outputCanvasCtx = this.outputCanvas.getContext('2d');
     let htmlImageElements = [];
     frames.forEach((frame, index) => {
       preloadImage(frame, img => {
@@ -59,10 +61,31 @@ export default class Viewer extends Component {
             totalLoaded: htmlImageElements.length,
           }
         });
-        this.ctx.drawImage(img, 0, 0, img.width, img.height);
+        
+        // this.imagePreloadCanvasCtx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+        if (index === 0) {
+          this.framesSize = {
+            width: img.width,
+            height: img.height,
+          };
+          this.spriteSheetCanvas.width = img.width;
+          this.spriteSheetCanvas.height = img.height * frames.length;
+        }
+        const y = img.height * index;
+        this.spriteSheetCanvasCtx.drawImage(img, 0, y);
+        this.spriteImage = new Image();
+        this.spriteImage.onload = () => {
+          this.spriteSheetCanvas.width = this.framesSize.width;
+          this.spriteSheetCanvas.height = this.framesSize.height;
+          this.spriteSheetCanvasCtx.drawImage(this.spriteImage, 0, 0);
+        }
+        
         // ensure order is correct
         htmlImageElements.splice(index, 0, img);
         if (index === frames.length - 1 || htmlImageElements.length === frames.length) {
+          const spriteImage = this.spriteSheetCanvas.toDataURL('image/jpeg', 1.0);
+          localStorage.setItem('spriteImage', spriteImage);
+          this.spriteImage.src = spriteImage;
           this.setState({
             loading: false,
             htmlImageElements,
@@ -88,7 +111,11 @@ export default class Viewer extends Component {
     if (!this.canvas) return;
     this.canvas.width = img.width;
     this.canvas.height = img.height;
-    this.ctx.drawImage(img, 0, 0, img.width, img.height);
+    this.ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+    const { height, width } = this.framesSize;
+    this.spriteSheetCanvasCtx.clearRect(0, 0, width, height);
+    const yPos = currentFrame === 0 ? 0 : -(currentFrame * height);
+    this.spriteSheetCanvasCtx.drawImage(this.spriteImage, 0, yPos);
   }
 
   getNextFrame() {
@@ -282,6 +309,15 @@ export default class Viewer extends Component {
       </div>
     );
 
+    const renderSpriteViewer = (
+      <div
+        className="Viewer"
+        style={{ maxWidth: this.canvas && this.canvas.width }}>
+        <canvas ref={canvas => this.spriteSheetCanvas = canvas}/>
+        
+      </div>
+    );
+
     const {
       getViewerProgressProps,
       getViewerControlsProps,
@@ -296,6 +332,7 @@ export default class Viewer extends Component {
       loadingProgress,
       renderAudio,
       renderViewer,
+      renderSpriteViewer,
     });
   }
 }

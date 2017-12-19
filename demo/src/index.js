@@ -27,6 +27,7 @@ class Demo extends Component {
           getViewerProgressProps,
           loadingProgress,
           renderViewer,
+          renderSpriteViewer,
         }) => {
           return (
             <div>
@@ -35,6 +36,7 @@ class Demo extends Component {
               <div style={{ maxWidth: 274 }}>
                 {renderViewer}
                 <ProgressBar {...getViewerProgressProps()} />
+                {renderSpriteViewer}
               </div>
             </div>
           )
