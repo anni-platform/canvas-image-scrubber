@@ -27,7 +27,6 @@ class Demo extends Component {
           getViewerProgressProps,
           loadingProgress,
           renderViewer,
-          renderSpriteViewer,
         }) => {
           return (
             <div>
@@ -36,10 +35,14 @@ class Demo extends Component {
               <div style={{ maxWidth: 274 }}>
                 {renderViewer}
                 <ProgressBar {...getViewerProgressProps()} />
-                {renderSpriteViewer}
               </div>
             </div>
           )
+        }}
+        sprite
+        spriteKey="huzzahSprite"
+        spriteLoadCallback={img => {
+          console.log('Upload file blob somewhere: ', img);
         }}
       />
     </div>

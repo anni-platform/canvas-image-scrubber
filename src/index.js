@@ -10,6 +10,26 @@ const preloadImage = (src, callback) => {
   img.src = src;
 }
 
+function dataURItoBlob(dataURI) {
+  // convert base64/URLEncoded data component to raw binary data held in a string
+  var byteString;
+  if (dataURI.split(',')[0].indexOf('base64') >= 0)
+      byteString = atob(dataURI.split(',')[1]);
+  else
+      byteString = unescape(dataURI.split(',')[1]);
+
+  // separate out the mime component
+  var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+
+  // write the bytes of the string to a typed array
+  var ia = new Uint8Array(byteString.length);
+  for (var i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+  }
+
+  return new Blob([ia], {type:mimeString});
+}
+
 export default class Viewer extends Component {
   static propTypes = {
     audioSource: PropTypes.string,
@@ -27,8 +47,6 @@ export default class Viewer extends Component {
       loading: true,
       isPlaying: false,
       htmlImageElements: null,
-      showColorPicker: false,
-      enableDraw: false,
       playAudio: true,
       volume: .5,
       loadingProgress: {
@@ -48,10 +66,21 @@ export default class Viewer extends Component {
     const {
       frames,
     } = this.props;
-    this.ctx = this.canvas.getContext('2d');
-    this.spriteSheetCanvasCtx = this.spriteSheetCanvas.getContext('2d');
-    this.outputCanvas = document.createElement('canvas');
-    this.outputCanvasCtx = this.outputCanvas.getContext('2d');
+    if (this.canvas) {
+      this.ctx = this.canvas.getContext('2d');
+    }
+    
+    if (this.spriteSheetCanvas) {
+      this.spriteSheetCanvasCtx = this.spriteSheetCanvas.getContext('2d');
+    }
+    
+    const sprite = this.props.sprite && localStorage.getItem('spriteImage');
+
+    if (sprite) {
+      this.spriteImage = new Image();
+      this.spriteImage.src = sprite;
+    }
+
     let htmlImageElements = [];
     frames.forEach((frame, index) => {
       preloadImage(frame, img => {
@@ -68,24 +97,34 @@ export default class Viewer extends Component {
             width: img.width,
             height: img.height,
           };
-          this.spriteSheetCanvas.width = img.width;
-          this.spriteSheetCanvas.height = img.height * frames.length;
+          if (this.spriteSheetCanvas) {
+            this.spriteSheetCanvas.width = img.width;
+            this.spriteSheetCanvas.height = img.height * frames.length;
+          }
         }
         const y = img.height * index;
-        this.spriteSheetCanvasCtx.drawImage(img, 0, y);
-        this.spriteImage = new Image();
-        this.spriteImage.onload = () => {
-          this.spriteSheetCanvas.width = this.framesSize.width;
-          this.spriteSheetCanvas.height = this.framesSize.height;
-          this.spriteSheetCanvasCtx.drawImage(this.spriteImage, 0, 0);
+
+        if (!sprite) {
+          this.spriteSheetCanvasCtx.drawImage(img, 0, y);
+          this.spriteImage = new Image();
+          this.spriteImage.onload = () => {
+            this.spriteSheetCanvas.width = this.framesSize.width;
+            this.spriteSheetCanvas.height = this.framesSize.height;
+            this.spriteSheetCanvasCtx.drawImage(this.spriteImage, 0, 0);
+          }
         }
         
         // ensure order is correct
         htmlImageElements.splice(index, 0, img);
         if (index === frames.length - 1 || htmlImageElements.length === frames.length) {
-          const spriteImage = this.spriteSheetCanvas.toDataURL('image/jpeg', 1.0);
-          localStorage.setItem('spriteImage', spriteImage);
-          this.spriteImage.src = spriteImage;
+          if (!sprite) {
+            const spriteImage = this.spriteSheetCanvas.toDataURL('image/jpeg', 1.0);
+            localStorage.setItem(this.props.spriteKey || 'spriteImage', spriteImage);
+            this.spriteImage.src = spriteImage;
+            if (this.props.spriteLoadCallback) {
+              this.props.spriteLoadCallback(dataURItoBlob(spriteImage));
+            }
+          }
           this.setState({
             loading: false,
             htmlImageElements,
@@ -93,9 +132,7 @@ export default class Viewer extends Component {
               ...this.state.loadingProgress,
               loadingComplete: true,
             }
-          }, () => {
-            this.drawFrame();
-          });
+          }, this.drawFrame);
         }
       })
     });
@@ -106,13 +143,19 @@ export default class Viewer extends Component {
       currentFrame,
       htmlImageElements,
     } = this.state;
-    if (!this.ctx || !htmlImageElements) return;
+    if (!htmlImageElements) return;
     const img = htmlImageElements[currentFrame];
-    if (!this.canvas) return;
-    this.canvas.width = img.width;
-    this.canvas.height = img.height;
-    this.ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+
+    if (this.canvas && this.ctx) {
+      this.canvas.width = img.width;
+      this.canvas.height = img.height;
+      this.ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+    }
+    
+    if (!this.spriteSheetCanvasCtx) return;
     const { height, width } = this.framesSize;
+    this.spriteSheetCanvas.width = this.framesSize.width;
+    this.spriteSheetCanvas.height = this.framesSize.height;
     this.spriteSheetCanvasCtx.clearRect(0, 0, width, height);
     const yPos = currentFrame === 0 ? 0 : -(currentFrame * height);
     this.spriteSheetCanvasCtx.drawImage(this.spriteImage, 0, yPos);
@@ -286,6 +329,7 @@ export default class Viewer extends Component {
       audioSource,
       frames,
       render,
+      sprite,
     } = this.props;
     const renderAudio = (
       <AudioTrack
@@ -300,20 +344,18 @@ export default class Viewer extends Component {
       />
     );
 
-    const renderViewer = (
-      <div
-        className="Viewer"
-        style={{ maxWidth: this.canvas && this.canvas.width }}>
-        <canvas ref={canvas => this.canvas = canvas}/>
-        
-      </div>
-    );
-
-    const renderSpriteViewer = (
+    const renderViewer = sprite ? (
       <div
         className="Viewer"
         style={{ maxWidth: this.canvas && this.canvas.width }}>
         <canvas ref={canvas => this.spriteSheetCanvas = canvas}/>
+        
+      </div>
+    ) : (
+      <div
+        className="Viewer"
+        style={{ maxWidth: this.canvas && this.canvas.width }}>
+        <canvas ref={canvas => this.canvas = canvas}/>
         
       </div>
     );
@@ -332,7 +374,6 @@ export default class Viewer extends Component {
       loadingProgress,
       renderAudio,
       renderViewer,
-      renderSpriteViewer,
     });
   }
 }
