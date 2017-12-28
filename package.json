@@ -20,10 +20,10 @@
     "test:watch": "nwb test-react --server"
   },
   "dependencies": {
-    "gh-pages": "^1.1.0",
     "lodash": "^4.17.4"
   },
   "peerDependencies": {
+    "gh-pages": "^1.1.0",
     "react": "16.x"
   },
   "devDependencies": {
