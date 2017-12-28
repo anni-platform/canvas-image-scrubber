@@ -39,6 +39,11 @@ class Demo extends Component {
             </div>
           )
         }}
+        sprite
+        spriteKey="huzzahSprite"
+        spriteLoadCallback={img => {
+          console.log('Upload file blob somewhere: ', img);
+        }}
       />
     </div>
   }

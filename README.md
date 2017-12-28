@@ -55,5 +55,36 @@ function MyApp() {
 }
 ```
 
+## Optionally Generate and Render a Sprite Image
+
+Optionally add the boolean prop `sprite` to generate and render a sprite image to the canvas instead of individual images. This can potentially improve performance. Additionally you can provide a callback function `spriteLoadCallback` for when the sprite image is done creating so you can upload the file to host it somewhere. The callback function receives the file blob as its first argument. Either way the data uri of the generated sprite image is saved to localStorage with the key "spriteImage" unless you specify a `spriteKey` prop with a custom key. See usage below.
+
+```js
+function mySpriteImageCanvasScrubber() {
+  return (
+    <CanvasImageScrubber
+      frames={frames}
+      render={({
+        getViewerControlsProps,
+        getViewerProgressProps,
+        loadingProgress,
+        renderViewer,
+      }) => {
+        return (
+          <div>
+            ... see above demo for usage here ...
+          </div>
+        )
+      }}
+      sprite
+      spriteKey="huzzahSprite"
+      spriteLoadCallback={file => {
+        console.log('Upload file blob somewhere: ', file);
+      }}
+    />
+  )
+}
+```
+
 [npm-badge]: https://img.shields.io/npm/v/npm-package.png?style=flat-square
 [npm]: https://www.npmjs.com/package/canvas-image-scrubber

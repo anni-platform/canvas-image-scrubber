@@ -1,6 +1,6 @@
 {
   "name": "canvas-image-scrubber",
-  "version": "1.1.1",
+  "version": "1.1.3",
   "description": "canvas-image-scrubber React component",
   "main": "lib/index.js",
   "module": "es/index.js",
@@ -30,7 +30,8 @@
     "nwb": "0.20.x",
     "prop-types": "^15.6.0",
     "react": "^16.2.0",
-    "react-dom": "^16.2.0"
+    "react-dom": "^16.2.0",
+    "gh-pages": "^1.1.0"
   },
   "author": "",
   "homepage": "",
