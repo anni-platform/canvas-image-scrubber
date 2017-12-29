@@ -26,20 +26,20 @@ class Demo extends Component {
           getViewerControlsProps,
           getViewerProgressProps,
           loadingProgress,
-          renderViewer,
+          getCanvasRef,
         }) => {
           return (
             <div>
               <LoadingProgress {...loadingProgress} />
               <Controls {...getViewerControlsProps()} />
               <div style={{ maxWidth: 274 }}>
-                {renderViewer}
+                <canvas ref={getCanvasRef} />
                 <ProgressBar {...getViewerProgressProps()} />
               </div>
             </div>
           )
         }}
-        sprite
+        isSpriteEnabled
         spriteKey="huzzahSprite"
         spriteLoadCallback={img => {
           console.log('Upload file blob somewhere: ', img);

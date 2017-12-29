@@ -55,6 +55,29 @@ function MyApp() {
 }
 ```
 
+## Optionally render your own canvas element
+
+The render props provided in the `render` prop callback provide a `getCanvasRef` which will allow you to render your own canvas element should you need to do so. Use `getCanvasRef` as the value for the prop `ref` on your canvas element, this way `canvas-image-scrubber` can get a dom reference to your canvas element. Usage example:
+
+```js
+
+function MyApp() {
+  render() {
+    <CanvasImageScrubber
+      frames={frames}
+      render={({ getCanvasRef }) => {
+        return (
+          <div>
+            <canvas ref={getCanvasRef} />
+          </div>
+        )
+      }}
+    />
+  }
+}
+```
+
+
 ## Optionally Generate and Render a Sprite Image
 
 Optionally add the boolean prop `sprite` to generate and render a sprite image to the canvas instead of individual images. This can potentially improve performance. Additionally you can provide a callback function `spriteLoadCallback` for when the sprite image is done creating so you can upload the file to host it somewhere. The callback function receives the file blob as its first argument. Either way the data uri of the generated sprite image is saved to localStorage with the key "spriteImage" unless you specify a `spriteKey` prop with a custom key. See usage below.
@@ -64,12 +87,7 @@ function mySpriteImageCanvasScrubber() {
   return (
     <CanvasImageScrubber
       frames={frames}
-      render={({
-        getViewerControlsProps,
-        getViewerProgressProps,
-        loadingProgress,
-        renderViewer,
-      }) => {
+      render={() => {
         return (
           <div>
             ... see above demo for usage here ...
