@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import AudioTrack from './AudioTrack';
 
 const FPS = 24;
+const DEFAULT_SPRITE_STORAGE_KEY = 'spriteImage';
 
 const preloadImage = (src, callback) => {
   const img = new Image();
@@ -35,6 +36,7 @@ export default class Viewer extends Component {
     audioSource: PropTypes.string,
     frames: PropTypes.arrayOf(PropTypes.string).isRequired,
     render: PropTypes.func.isRequired,
+    isSpriteEnabled: PropTypes.bool,
   }
 
   constructor(props) {
@@ -65,20 +67,24 @@ export default class Viewer extends Component {
   componentDidMount() {
     const {
       frames,
+      isSpriteEnabled,
     } = this.props;
     if (this.canvas) {
       this.ctx = this.canvas.getContext('2d');
     }
     
-    if (this.spriteSheetCanvas) {
-      this.spriteSheetCanvasCtx = this.spriteSheetCanvas.getContext('2d');
-    }
-    
-    const sprite = this.props.sprite && localStorage.getItem('spriteImage');
+    const spriteFromLocalStorage = localStorage.getItem(this.props.spriteKey || DEFAULT_SPRITE_STORAGE_KEY);
 
-    if (sprite) {
+    if (isSpriteEnabled && spriteFromLocalStorage) {
       this.spriteImage = new Image();
-      this.spriteImage.src = sprite;
+      this.spriteImage.src = spriteFromLocalStorage;
+    }
+
+    const weNeedToMakeASpritesheet = !spriteFromLocalStorage && isSpriteEnabled;
+    if (weNeedToMakeASpritesheet) {
+      this.spriteImage = new Image();
+      this.spriteSheetCanvas = document.createElement('canvas');
+      this.spriteSheetCanvasCtx = this.spriteSheetCanvas.getContext('2d');
     }
 
     let htmlImageElements = [];
@@ -97,29 +103,25 @@ export default class Viewer extends Component {
             width: img.width,
             height: img.height,
           };
-          if (this.spriteSheetCanvas) {
+
+          if (weNeedToMakeASpritesheet) {
             this.spriteSheetCanvas.width = img.width;
             this.spriteSheetCanvas.height = img.height * frames.length;
           }
         }
         const y = img.height * index;
 
-        if (!sprite) {
+        if (weNeedToMakeASpritesheet) {
           this.spriteSheetCanvasCtx.drawImage(img, 0, y);
-          this.spriteImage = new Image();
-          this.spriteImage.onload = () => {
-            this.spriteSheetCanvas.width = this.framesSize.width;
-            this.spriteSheetCanvas.height = this.framesSize.height;
-            this.spriteSheetCanvasCtx.drawImage(this.spriteImage, 0, 0);
-          }
         }
         
         // ensure order is correct
         htmlImageElements.splice(index, 0, img);
         if (index === frames.length - 1 || htmlImageElements.length === frames.length) {
-          if (!sprite) {
+          if (weNeedToMakeASpritesheet) {
             const spriteImage = this.spriteSheetCanvas.toDataURL('image/jpeg', 1.0);
-            localStorage.setItem(this.props.spriteKey || 'spriteImage', spriteImage);
+            this.spriteImage.src = spriteImage;
+            localStorage.setItem(this.props.spriteKey || DEFAULT_SPRITE_STORAGE_KEY, spriteImage);
             this.spriteImage.src = spriteImage;
             if (this.props.spriteLoadCallback) {
               this.props.spriteLoadCallback(dataURItoBlob(spriteImage));
@@ -139,6 +141,7 @@ export default class Viewer extends Component {
   }
 
   drawFrame = () => {
+    const { isSpriteEnabled } = this.props;
     const {
       currentFrame,
       htmlImageElements,
@@ -146,19 +149,19 @@ export default class Viewer extends Component {
     if (!htmlImageElements) return;
     const img = htmlImageElements[currentFrame];
 
-    if (this.canvas && this.ctx) {
+    if (this.canvas && this.ctx && !isSpriteEnabled) {
       this.canvas.width = img.width;
       this.canvas.height = img.height;
       this.ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
     }
     
-    if (!this.spriteSheetCanvasCtx) return;
+    if (!isSpriteEnabled) return;
     const { height, width } = this.framesSize;
-    this.spriteSheetCanvas.width = this.framesSize.width;
-    this.spriteSheetCanvas.height = this.framesSize.height;
-    this.spriteSheetCanvasCtx.clearRect(0, 0, width, height);
+    this.canvas.width = this.framesSize.width;
+    this.canvas.height = this.framesSize.height;
+    this.ctx.clearRect(0, 0, width, height);
     const yPos = currentFrame === 0 ? 0 : -(currentFrame * height);
-    this.spriteSheetCanvasCtx.drawImage(this.spriteImage, 0, yPos);
+    this.ctx.drawImage(this.spriteImage, 0, yPos);
   }
 
   getNextFrame() {
@@ -329,7 +332,7 @@ export default class Viewer extends Component {
       audioSource,
       frames,
       render,
-      sprite,
+      isSpriteEnabled,
     } = this.props;
     const renderAudio = (
       <AudioTrack
@@ -344,28 +347,15 @@ export default class Viewer extends Component {
       />
     );
 
-    const renderViewer = sprite ? (
-      <div
-        className="Viewer"
-        style={{ maxWidth: this.canvas && this.canvas.width }}>
-        <canvas ref={canvas => this.spriteSheetCanvas = canvas}/>
-        
-      </div>
-    ) : (
-      <div
-        className="Viewer"
-        style={{ maxWidth: this.canvas && this.canvas.width }}>
-        <canvas ref={canvas => this.canvas = canvas}/>
-        
-      </div>
-    );
-
     const {
       getViewerProgressProps,
       getViewerControlsProps,
     } = this;
 
     if (!render) return 'Please provide render function prop';
+
+    const getCanvasRef = el => this.canvas = el;
+    const renderViewer = <canvas ref={getCanvasRef} />;
 
     return render({
       ...this.state,
@@ -374,6 +364,7 @@ export default class Viewer extends Component {
       loadingProgress,
       renderAudio,
       renderViewer,
+      getCanvasRef,
     });
   }
 }
