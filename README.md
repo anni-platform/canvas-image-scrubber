@@ -2,6 +2,8 @@
 
 [![npm version](https://badge.fury.io/js/canvas-image-scrubber.svg)](https://badge.fury.io/js/canvas-image-scrubber)
 
+*Currently under heavy development. API will probably change
+
 A react component to render video-like playback for image sequences 🎥.
 
 [View Demo](https://anni-platform.github.io/canvas-image-scrubber/)
