@@ -17,8 +17,7 @@
     "start": "nwb serve-react-demo",
     "test": "nwb test-react",
     "test:coverage": "nwb test-react --coverage",
-    "test:watch": "nwb test-react --server",
-    "publish": "yarn build && npm publish"
+    "test:watch": "nwb test-react --server"
   },
   "dependencies": {
     "lodash": "^4.17.4"
