@@ -1,6 +1,6 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import AudioTrack from './AudioTrack';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
+import AudioTrack from "./AudioTrack";
 
 const FPS = 24;
 
@@ -8,34 +8,34 @@ const preloadImage = (src, callback) => {
   const img = new Image();
   img.onload = () => callback(img);
   img.src = src;
-}
+};
 
 function dataURItoBlob(dataURI) {
   // convert base64/URLEncoded data component to raw binary data held in a string
   var byteString;
-  if (dataURI.split(',')[0].indexOf('base64') >= 0)
-      byteString = atob(dataURI.split(',')[1]);
+  if (dataURI.split(",")[0].indexOf("base64") >= 0)
+    byteString = atob(dataURI.split(",")[1]);
   else
-      byteString = unescape(dataURI.split(',')[1]);
+    byteString = unescape(dataURI.split(",")[1]);
 
   // separate out the mime component
-  var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+  var mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
 
   // write the bytes of the string to a typed array
   var ia = new Uint8Array(byteString.length);
   for (var i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
+    ia[i] = byteString.charCodeAt(i);
   }
 
-  return new Blob([ia], {type:mimeString});
+  return new Blob([ia], { type: mimeString });
 }
 
 export default class Viewer extends Component {
   static propTypes = {
     audioSource: PropTypes.string,
     frames: PropTypes.arrayOf(PropTypes.string).isRequired,
-    render: PropTypes.func.isRequired,
-  }
+    render: PropTypes.func.isRequired
+  };
 
   constructor(props) {
     super(props);
@@ -48,12 +48,12 @@ export default class Viewer extends Component {
       isPlaying: false,
       htmlImageElements: null,
       playAudio: true,
-      volume: .5,
+      volume: 0.5,
       loadingProgress: {
         loadingComplete: false,
         totalLoaded: 0,
-        totalFramesToLoad: frames.length,
-      },
+        totalFramesToLoad: frames.length
+      }
     };
     window.onkeydown = this.handleKeydown;
   }
@@ -64,17 +64,17 @@ export default class Viewer extends Component {
 
   componentDidMount() {
     const {
-      frames,
+      frames
     } = this.props;
     if (this.canvas) {
-      this.ctx = this.canvas.getContext('2d');
+      this.ctx = this.canvas.getContext("2d");
     }
-    
+
     if (this.spriteSheetCanvas) {
-      this.spriteSheetCanvasCtx = this.spriteSheetCanvas.getContext('2d');
+      this.spriteSheetCanvasCtx = this.spriteSheetCanvas.getContext("2d");
     }
-    
-    const sprite = this.props.sprite && localStorage.getItem('spriteImage');
+
+    const sprite = this.props.sprite && localStorage.getItem("spriteImage");
 
     if (sprite) {
       this.spriteImage = new Image();
@@ -87,15 +87,15 @@ export default class Viewer extends Component {
         this.setState({
           loadingProgress: {
             ...this.state.loadingProgress,
-            totalLoaded: htmlImageElements.length,
+            totalLoaded: htmlImageElements.length
           }
         });
-        
+
         // this.imagePreloadCanvasCtx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
         if (index === 0) {
           this.framesSize = {
             width: img.width,
-            height: img.height,
+            height: img.height
           };
           if (this.spriteSheetCanvas) {
             this.spriteSheetCanvas.width = img.width;
@@ -111,37 +111,49 @@ export default class Viewer extends Component {
             this.spriteSheetCanvas.width = this.framesSize.width;
             this.spriteSheetCanvas.height = this.framesSize.height;
             this.spriteSheetCanvasCtx.drawImage(this.spriteImage, 0, 0);
-          }
+          };
         }
-        
+
         // ensure order is correct
         htmlImageElements.splice(index, 0, img);
-        if (index === frames.length - 1 || htmlImageElements.length === frames.length) {
+        if (
+          index === frames.length - 1 ||
+          htmlImageElements.length === frames.length
+        ) {
           if (!sprite) {
-            const spriteImage = this.spriteSheetCanvas.toDataURL('image/jpeg', 1.0);
-            localStorage.setItem(this.props.spriteKey || 'spriteImage', spriteImage);
+            const spriteImage = this.spriteSheetCanvas.toDataURL(
+              "image/jpeg",
+              1.0
+            );
+            localStorage.setItem(
+              this.props.spriteKey || "spriteImage",
+              spriteImage
+            );
             this.spriteImage.src = spriteImage;
             if (this.props.spriteLoadCallback) {
               this.props.spriteLoadCallback(dataURItoBlob(spriteImage));
             }
           }
-          this.setState({
-            loading: false,
-            htmlImageElements,
-            loadingProgress: {
-              ...this.state.loadingProgress,
-              loadingComplete: true,
-            }
-          }, this.drawFrame);
+          this.setState(
+            {
+              loading: false,
+              htmlImageElements,
+              loadingProgress: {
+                ...this.state.loadingProgress,
+                loadingComplete: true
+              }
+            },
+            this.drawFrame
+          );
         }
-      })
+      });
     });
   }
 
   drawFrame = () => {
     const {
       currentFrame,
-      htmlImageElements,
+      htmlImageElements
     } = this.state;
     if (!htmlImageElements) return;
     const img = htmlImageElements[currentFrame];
@@ -149,9 +161,19 @@ export default class Viewer extends Component {
     if (this.canvas && this.ctx) {
       this.canvas.width = img.width;
       this.canvas.height = img.height;
-      this.ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+      this.ctx.drawImage(
+        img,
+        0,
+        0,
+        img.width,
+        img.height,
+        0,
+        0,
+        img.width,
+        img.height
+      );
     }
-    
+
     if (!this.spriteSheetCanvasCtx) return;
     const { height, width } = this.framesSize;
     this.spriteSheetCanvas.width = this.framesSize.width;
@@ -159,99 +181,116 @@ export default class Viewer extends Component {
     this.spriteSheetCanvasCtx.clearRect(0, 0, width, height);
     const yPos = currentFrame === 0 ? 0 : -(currentFrame * height);
     this.spriteSheetCanvasCtx.drawImage(this.spriteImage, 0, yPos);
-  }
+  };
 
   getNextFrame() {
     let {
-      currentFrame,
+      currentFrame
     } = this.state;
     const {
-      frames,
+      frames
     } = this.props;
-    if (currentFrame === frames.length - 1)
-      return 0;
+    if (currentFrame === frames.length - 1) return 0;
     return currentFrame + 1;
   }
 
   getPrevFrame() {
     let {
-      currentFrame,
+      currentFrame
     } = this.state;
     const {
-      frames,
+      frames
     } = this.props;
-    if (currentFrame === 0)
-      return frames.length - 1;
+    if (currentFrame === 0) return frames.length - 1;
     return currentFrame - 1;
   }
 
   goToFrame = currentFrame => {
-    this.setState({
-      currentFrame,
-    }, this.drawFrame)
+    this.setState(
+      {
+        currentFrame
+      },
+      this.drawFrame
+    );
   };
 
-  goToNextFrame = () => this.setState({
-    currentFrame: this.getNextFrame()
-  }, this.drawFrame);
+  goToNextFrame = () =>
+    this.setState(
+      {
+        currentFrame: this.getNextFrame()
+      },
+      this.drawFrame
+    );
 
-  goToPrevFrame = () => this.setState({
-    currentFrame: this.getPrevFrame()
-  }, this.drawFrame);
+  goToPrevFrame = () =>
+    this.setState(
+      {
+        currentFrame: this.getPrevFrame()
+      },
+      this.drawFrame
+    );
 
-  pause = () => this.setState({
-    isPlaying: false,
-  });
+  pause = () =>
+    this.setState({
+      isPlaying: false
+    });
 
-  togglePlay = () => this.setState({
-    isPlaying: !this.state.isPlaying,
-  }, () => {
-    if (!this.state.isPlaying)
-      return;
+  togglePlay = () =>
+    this.setState(
+      {
+        isPlaying: !this.state.isPlaying
+      },
+      () => {
+        if (!this.state.isPlaying) return;
 
-    (this.play(() => {
-      if (!this.state.isPlaying)
-        return;
-      const currentFrame = this.getNextFrame();
-      this.state.isPlaying && this.setState({
-        currentFrame,
-      }, this.drawFrame);
-    })());
-  });
+        this.play(() => {
+          if (!this.state.isPlaying) return;
+          const currentFrame = this.getNextFrame();
+          this.state.isPlaying &&
+            this.setState(
+              {
+                currentFrame
+              },
+              this.drawFrame
+            );
+        })();
+      }
+    );
 
-  toggleAudio = () => this.setState({
-    playAudio: !this.state.playAudio,
-  });
-  onVolumeChange = volume => this.setState({
-    volume,
-  });
+  toggleAudio = () =>
+    this.setState({
+      playAudio: !this.state.playAudio
+    });
+  onVolumeChange = volume =>
+    this.setState({
+      volume
+    });
 
-  play = (callback) => {
-    if (!this.state.isPlaying)
-      return;
+  play = callback => {
+    if (!this.state.isPlaying) return;
 
     let then = Date.now();
     let now;
     let delta;
 
     const animate = () => {
-      if (!this.state.isPlaying)
-        return;
+      if (!this.state.isPlaying) return;
       now = Date.now();
       delta = now - then;
       const interval = 1000 / this.state.fps;
       if (delta > interval) {
         callback();
-        then = now - (delta % interval);
+        then = now - delta % interval;
       }
       requestAnimationFrame(animate);
-    }
+    };
     return animate;
   };
 
-  onAudioReady = () => this.setState({
-    audioReady: true,
-  });
+  onAudioReady = () =>
+    this.setState({
+      audioReady: true
+    });
 
   get isLoading() {
     return !this.state.audioReady && this.state.loading;
@@ -273,22 +312,21 @@ export default class Viewer extends Component {
     if (key === SPACEBAR_KEY) {
       e.preventDefault();
       this.togglePlay();
-
     }
-  }
+  };
   getViewerControlsProps = () => {
     const {
       pause,
       togglePlay,
       toggleAudio,
-      onVolumeChange,
+      onVolumeChange
     } = this;
     const {
       currentFrame,
       isPlaying,
       fps,
       playAudio,
-      volume,
+      volume
     } = this.state || {};
     return {
       fps,
@@ -303,9 +341,9 @@ export default class Viewer extends Component {
       toggleAudio,
       volume,
       onVolumeChange,
-      onFPSChange: fps => this.setState({ fps }),
-    }
-  }
+      onFPSChange: fps => this.setState({ fps })
+    };
+  };
   getViewerProgressProps = () => {
     const { currentFrame } = this.state || {};
     const { frames } = this.props;
@@ -313,9 +351,9 @@ export default class Viewer extends Component {
       min: 0,
       max: frames.length - 1,
       value: currentFrame,
-      onChange: this.goToFrame,
-    }
-  }
+      onChange: this.goToFrame
+    };
+  };
   render() {
     const {
       currentFrame,
@@ -323,13 +361,13 @@ export default class Viewer extends Component {
       fps,
       playAudio,
       volume,
-      loadingProgress,
+      loadingProgress
     } = this.state || {};
     const {
       audioSource,
       frames,
       render,
-      sprite,
+      sprite
     } = this.props;
     const renderAudio = (
       <AudioTrack
@@ -344,28 +382,16 @@ export default class Viewer extends Component {
       />
     );
 
-    const renderViewer = sprite ? (
-      <div
-        className="Viewer"
-        style={{ maxWidth: this.canvas && this.canvas.width }}>
-        <canvas ref={canvas => this.spriteSheetCanvas = canvas}/>
-        
-      </div>
-    ) : (
-      <div
-        className="Viewer"
-        style={{ maxWidth: this.canvas && this.canvas.width }}>
-        <canvas ref={canvas => this.canvas = canvas}/>
-        
-      </div>
-    );
+    const renderViewer = sprite
+      ? <canvas ref={canvas => this.spriteSheetCanvas = canvas} />
+      : <canvas ref={canvas => this.canvas = canvas} />;
 
     const {
       getViewerProgressProps,
-      getViewerControlsProps,
+      getViewerControlsProps
     } = this;
 
-    if (!render) return 'Please provide render function prop';
+    if (!render) return "Please provide render function prop";
 
     return render({
       ...this.state,
@@ -373,7 +399,7 @@ export default class Viewer extends Component {
       getViewerControlsProps,
       loadingProgress,
       renderAudio,
-      renderViewer,
+      renderViewer
     });
   }
 }
