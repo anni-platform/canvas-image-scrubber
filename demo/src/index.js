@@ -8,8 +8,8 @@ import LoadingProgress from './LoadingProgress';
 export function getFrames() {
   let i = 1;
   const frames = [];
-  while (i < 39) {
-    frames.push(require(`./frames/Frame-${i}.jpg`));
+  while (i < 121) {
+    frames.push(require(`./kaleidoscope/Frame-${i}.jpg`));
     i++;
   }
   return frames;
@@ -38,11 +38,6 @@ class Demo extends Component {
               </div>
             </div>
           )
-        }}
-        isSpriteEnabled
-        spriteKey="huzzahSprite"
-        spriteLoadCallback={img => {
-          console.log('Upload file blob somewhere: ', img);
         }}
       />
     </div>
