@@ -1,16 +1,42 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import throttle from 'lodash/throttle';
 
 export default class AudioTrack extends Component {
+  static propTypes = {
+    currentTime: PropTypes.number,
+    onReady: PropTypes.func,
+    playing: PropTypes.bool,
+    playAudio: PropTypes.bool,
+    showControls: PropTypes.bool,
+    src: PropTypes.string,
+    trackProps: PropTypes.shape({
+      label: PropTypes.string,
+    }),
+    volume: PropTypes.number,
+  };
+
+  static defaultProps = {
+    currentTime: 0,
+    playing: false,
+    playAudio: false,
+    onReady: () => null,
+    showControls: false,
+    src: '',
+    trackProps: {},
+    volume: 0.5,
+  };
+
   constructor(props) {
     super(props);
+
     this.state = {
-      playing: false,
-      currentTime: props.currentTime || 0,
+      currentTime: props.currentTime,
       isReady: false,
-      volume: props.volume || .5,
-    }
+      volume: props.volume,
+    };
   }
+
   componentDidMount() {
     this.pauseAudio();
     this.audio.addEventListener('canplaythrough', () => {
@@ -19,7 +45,7 @@ export default class AudioTrack extends Component {
       }, this.props.onReady);
     });
   }
-  pauseAudio = () => this.audio.pause();
+
   componentWillReceiveProps({
     currentTime,
     playing,
@@ -27,21 +53,24 @@ export default class AudioTrack extends Component {
     volume,
   }) {
     if (!this.state.isReady) return;
+
     this.audio.muted = !playAudio || false;
+
     if (this.state.currentTime > currentTime) {
       this.audio.currentTime = currentTime;
     } else {
-
       throttle(() => {
         this.pauseAudio();
         this.audio.currentTime = currentTime;
         this.audio.play();
       }, 100);
     }
+
     this.setState({
       currentTime,
       volume,
     });
+
     if (playing && this.audio.paused) {
       this.audio.play();
     } else if (!playing) {
@@ -52,13 +81,29 @@ export default class AudioTrack extends Component {
       this.audio.volume = volume;
     }
   }
+
+  pauseAudio = () => this.audio.pause();
+  registerAudio = (audio) => {
+    this.audio = audio;
+  }
+
   render() {
     const {
       src,
       showControls,
+      trackProps,
     } = this.props;
     return (
-      <audio src={src} ref={audio => this.audio = audio} controls={showControls} />
-    )
+      <audio
+        controls={showControls}
+        ref={this.registerAudio}
+        src={src}
+      >
+        <track
+          kind="captions"
+          {...trackProps}
+        />
+      </audio>
+    );
   }
 }
