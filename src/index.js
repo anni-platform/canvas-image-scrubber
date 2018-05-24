@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import AudioTrack from './AudioTrack';
 
-const FPS = 24;
+const DEFAULT_FPS = 24;
 
 const preloadImage = (src, callback) => {
   const img = new Image();
@@ -20,7 +20,7 @@ export default class Viewer extends Component {
 
   static defaultProps = {
     audioSource: '',
-    fps: FPS,
+    fps: DEFAULT_FPS,
   };
 
   constructor(props) {
@@ -102,6 +102,11 @@ export default class Viewer extends Component {
     return !this.state.audioReady && this.state.loading;
   }
 
+  get currentAudioPosition() {
+    const { currentFrame, fps } = this.state;
+    return currentFrame === 0 ? 0 : currentFrame / fps;
+  }
+
   getNextFrame() {
     const { currentFrame } = this.state;
     const { frames } = this.props;
@@ -144,7 +149,7 @@ export default class Viewer extends Component {
       toggleAudio,
       volume,
       onVolumeChange,
-      onFPSChange: fpsChange => this.setState({ fps: fpsChange }),
+      onFPSChange: fpsChange => this.setState({ fps: parseInt(fpsChange, 10) }),
     };
   }
 
@@ -215,28 +220,28 @@ export default class Viewer extends Component {
     });
   };
 
-  play = (callback) => {
+  play = (renderFrame) => {
     if (!this.state.isPlaying) return;
 
-    let then = Date.now();
+    let then = performance.now();
     let now;
     let delta;
 
-    const animate = () => {
+    const nextFrame = () => {
       if (!this.state.isPlaying) return;
 
-      now = Date.now();
+      now = performance.now();
       delta = now - then;
-      const interval = 1000 / this.state.fps;
+      const interval = Math.round(1000 / this.state.fps);
 
       if (delta > interval) {
-        callback();
+        renderFrame();
         then = now;
       }
-      requestAnimationFrame(animate);
+      requestAnimationFrame(nextFrame);
     };
 
-    (animate())();
+    nextFrame();
   };
 
   handleKeydown = (e) => {
@@ -272,7 +277,9 @@ export default class Viewer extends Component {
 
   render() {
     const {
-      currentFrame,
+      currentAudioPosition,
+    } = this;
+    const {
       isPlaying,
       fps,
       playAudio,
@@ -285,7 +292,7 @@ export default class Viewer extends Component {
       render,
     } = this.props;
 
-    const renderAudio = (
+    const renderAudio = playAudio && (
       <AudioTrack
         src={audioSource}
         playAudio={playAudio}
@@ -294,7 +301,7 @@ export default class Viewer extends Component {
         maxTime={frames.length / fps}
         volume={volume}
         showControls
-        currentTime={currentFrame === 0 ? 0 : currentFrame / fps}
+        currentTime={this.currentAudioPosition}
       />
     );
 
@@ -314,6 +321,8 @@ export default class Viewer extends Component {
       renderAudio,
       renderViewer,
       getCanvasRef,
+      currentAudioPosition,
+      isPlaying,
     });
   }
 }
