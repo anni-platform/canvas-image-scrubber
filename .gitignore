@@ -7,3 +7,4 @@
 npm-debug.log*
 /demo/src/flock
 /demo/src/kaleidoscope
+.DS_Store

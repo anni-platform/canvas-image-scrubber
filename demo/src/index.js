@@ -9,8 +9,8 @@ import LoadingProgress from './LoadingProgress';
 function getFrames() {
   let i = 1;
   const frames = [];
-  while (i < 500) {
-    frames.push(require(`./flock/Frame-${i}.jpg`)); // eslint-disable-line
+  while (i < 120) {
+    frames.push(require(`./frames/animation/animation_${i}.jpg`)); // eslint-disable-line
     i += 1;
   }
   return frames;
@@ -23,7 +23,7 @@ class Demo extends Component {
     audioSrc: '',
   };
   componentDidMount() {
-    import('./gymnopedie.mp3').then((audioSrc) => {
+    import('./gymnopedie.mp3').then(({ default: audioSrc }) => {
       this.setState({ audioSrc, ready: true });
     });
   }

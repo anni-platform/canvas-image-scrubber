@@ -82,7 +82,7 @@ export default class AudioTrack extends Component {
     }
   }
 
-  pauseAudio = () => this.audio.pause();
+  pauseAudio = () => { if (this.audio) this.audio.pause(); }
   registerAudio = (audio) => {
     this.audio = audio;
   }
@@ -93,6 +93,7 @@ export default class AudioTrack extends Component {
       showControls,
       trackProps,
     } = this.props;
+
     return (
       <audio
         controls={showControls}
