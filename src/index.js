@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useReducer, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import AudioTrack from './AudioTrack';
 
@@ -10,13 +10,129 @@ const preloadImage = (src, callback) => {
   img.src = src;
 };
 
+const preloadImagePromise = src =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = e => reject(e);
+    img.src = src;
+  });
+
+const reducer = (state, action) => ({
+  ...state,
+  ...action,
+});
+
+export function useCanvasScrubber({ fps = DEFAULT_FPS, frames = [] }) {
+  const currentFrame = useRef(null);
+  const nextTickRAF = useRef();
+  const canvasRef = useRef(null);
+  const [state, setState] = useReducer(reducer, {
+    currentFrame: 0,
+    isPlaying: false,
+    htmlImageElements: [],
+  });
+
+  const {
+    isPlaying, htmlImageElements,
+  } = state;
+
+  function drawFrame(img) {
+    canvasRef.current.width = img.width;
+    canvasRef.current.height = img.height;
+    canvasRef.current
+      .getContext('2d')
+      .drawImage(
+        img,
+        0,
+        0,
+        img.width,
+        img.height,
+        0,
+        0,
+        img.width,
+        img.height
+      );
+  }
+
+  useEffect(() => {
+    if (!canvasRef) return;
+    async function load() {
+      const htmlImages = await Promise.all(frames.map(f => preloadImagePromise(f)));
+
+      if (!htmlImages || htmlImages.length === 0) return;
+
+      const { width, height } = htmlImages[0];
+      setState({
+        htmlImageElements: htmlImages,
+        frameSize: {
+          width,
+          height,
+        },
+      });
+      drawFrame(htmlImages[0]);
+    }
+    load();
+  }, [frames, canvasRef]);
+
+  function play() {
+    if (!state.isPlaying) return;
+
+    let then = performance.now();
+    let now;
+    let delta;
+
+    const nextTick = () => {
+      if (!state.isPlaying) return;
+
+      now = performance.now();
+      delta = now - then;
+      const interval = Math.round(1000 / fps);
+
+      if (delta > interval) {
+        // Mutate next frame
+        const frameIndex = currentFrame.current;
+        then = now;
+        currentFrame.current = frameIndex === frames.length - 1 ? 0 : frameIndex + 1;
+
+        // Draw Canvas
+        drawFrame(htmlImageElements[currentFrame.current]);
+      }
+
+      nextTickRAF.current = requestAnimationFrame(nextTick);
+    };
+
+    // START LOOP
+    nextTick();
+  }
+
+  useEffect(() => {
+    if (isPlaying) {
+      play();
+    } else if (nextTickRAF.current) {
+      cancelAnimationFrame(nextTickRAF.current);
+    }
+  }, [isPlaying]);
+
+  function togglePlay() {
+    const nextIsPlaying = htmlImageElements.length > 0 && !isPlaying;
+    setState({ isPlaying: nextIsPlaying });
+  }
+
+  return {
+    ...state,
+    canvasRef,
+    togglePlay,
+  };
+}
+
 export default class Viewer extends Component {
   static propTypes = {
     audioSource: PropTypes.string,
     fps: PropTypes.number,
     frames: PropTypes.arrayOf(PropTypes.string).isRequired,
     render: PropTypes.func.isRequired,
-  }
+  };
 
   static defaultProps = {
     audioSource: '',
@@ -71,14 +187,17 @@ export default class Viewer extends Component {
         // ensure order is correct
         htmlImageElements.splice(index, 0, img);
         if (htmlImageElements.length === frames.length) {
-          this.setState({
-            loading: false,
-            htmlImageElements,
-            loadingProgress: {
-              ...this.state.loadingProgress,
-              loadingComplete: true,
+          this.setState(
+            {
+              loading: false,
+              htmlImageElements,
+              loadingProgress: {
+                ...this.state.loadingProgress,
+                loadingComplete: true,
+              },
             },
-          }, this.drawFrame);
+            this.drawFrame
+          );
         }
       });
     });
@@ -123,18 +242,12 @@ export default class Viewer extends Component {
 
   getViewerControlsProps = () => {
     const {
-      pause,
-      togglePlay,
-      toggleAudio,
-      onVolumeChange,
+      pause, togglePlay, toggleAudio, onVolumeChange,
     } = this;
     const {
-      currentFrame,
-      isPlaying,
-      fps,
-      playAudio,
-      volume,
-    } = this.state || {};
+      currentFrame, isPlaying, fps, playAudio, volume,
+    } =
+      this.state || {};
 
     return {
       fps,
@@ -151,7 +264,7 @@ export default class Viewer extends Component {
       onVolumeChange,
       onFPSChange: fpsChange => this.setState({ fps: parseInt(fpsChange, 10) }),
     };
-  }
+  };
 
   getViewerProgressProps = () => {
     const { currentFrame } = this.state || {};
@@ -163,29 +276,32 @@ export default class Viewer extends Component {
       value: currentFrame,
       onChange: this.goToFrame,
     };
-  }
+  };
 
   goToFrame = (currentFrame) => {
     this.setState({ currentFrame }, this.drawFrame);
   };
 
   goToNextFrame = () => {
-    this.setState({
-      currentFrame: this.getNextFrame(),
-    }, this.drawFrame);
+    this.setState(
+      {
+        currentFrame: this.getNextFrame(),
+      },
+      this.drawFrame
+    );
   };
 
   goToPrevFrame = () => {
-    this.setState({
-      currentFrame: this.getPrevFrame(),
-    }, this.drawFrame);
+    this.setState(
+      {
+        currentFrame: this.getPrevFrame(),
+      },
+      this.drawFrame
+    );
   };
 
   drawFrame = () => {
-    const {
-      currentFrame,
-      htmlImageElements,
-    } = this.state;
+    const { currentFrame, htmlImageElements } = this.state;
 
     if (!htmlImageElements) return;
 
@@ -194,9 +310,19 @@ export default class Viewer extends Component {
     if (this.canvas && this.ctx) {
       this.canvas.width = img.width;
       this.canvas.height = img.height;
-      this.ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+      this.ctx.drawImage(
+        img,
+        0,
+        0,
+        img.width,
+        img.height,
+        0,
+        0,
+        img.width,
+        img.height
+      );
     }
-  }
+  };
 
   pause = () => {
     this.setState({
@@ -205,13 +331,16 @@ export default class Viewer extends Component {
   };
 
   togglePlay = () => {
-    this.setState({
-      isPlaying: !this.state.isPlaying,
-    }, () => {
-      if (!this.state.isPlaying) return;
+    this.setState(
+      {
+        isPlaying: !this.state.isPlaying,
+      },
+      () => {
+        if (!this.state.isPlaying) return;
 
-      this.play(this.renderNextFrame);
-    });
+        this.play(this.renderNextFrame);
+      }
+    );
   };
 
   toggleAudio = () => {
@@ -265,32 +394,26 @@ export default class Viewer extends Component {
       break;
     default:
     }
-  }
+  };
 
   renderNextFrame = () => {
     if (!this.state.isPlaying) return;
 
-    this.setState({
-      currentFrame: this.getNextFrame(),
-    }, this.drawFrame);
-  }
+    this.setState(
+      {
+        currentFrame: this.getNextFrame(),
+      },
+      this.drawFrame
+    );
+  };
 
   render() {
+    const { currentAudioPosition } = this;
     const {
-      currentAudioPosition,
-    } = this;
-    const {
-      isPlaying,
-      fps,
-      playAudio,
-      volume,
-      loadingProgress,
-    } = this.state || {};
-    const {
-      audioSource,
-      frames,
-      render,
-    } = this.props;
+      isPlaying, fps, playAudio, volume, loadingProgress,
+    } =
+      this.state || {};
+    const { audioSource, frames, render } = this.props;
 
     const renderAudio = playAudio && (
       <AudioTrack
@@ -305,12 +428,11 @@ export default class Viewer extends Component {
       />
     );
 
-    const {
-      getViewerProgressProps,
-      getViewerControlsProps,
-    } = this;
+    const { getViewerProgressProps, getViewerControlsProps } = this;
 
-    const getCanvasRef = (el) => { this.canvas = el; };
+    const getCanvasRef = (el) => {
+      this.canvas = el;
+    };
     const renderViewer = <canvas ref={getCanvasRef} />;
 
     return render({

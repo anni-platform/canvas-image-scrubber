@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import { render } from 'react-dom';
-import CanvasImageScrubber from '../../src';
+import { Router, Link } from '@reach/router';
+import CanvasImageScrubber, { useCanvasScrubber } from '../../src';
 import Controls from './Controls';
 import ProgressBar from './ProgressBar';
 import LoadingProgress from './LoadingProgress';
-
 
 function getFrames() {
   let i = 1;
@@ -15,6 +15,14 @@ function getFrames() {
   }
   return frames;
 }
+
+function CanvasContainer({ children }) {
+  return <div style={{ position: 'relative', maxWidth: 800 }}>{children}</div>;
+}
+
+const canvasStyle = {
+  maxWidth: '100%',
+};
 
 const frames = getFrames();
 
@@ -30,7 +38,7 @@ class Demo extends Component {
   render() {
     const { audioSrc, ready } = this.state;
     return ready ? (
-      <div>
+      <CanvasContainer>
         <CanvasImageScrubber
           audioSource={audioSrc}
           frames={frames}
@@ -52,9 +60,36 @@ class Demo extends Component {
             </div>
           )}
         />
-      </div>
-    ) : 'loading...';
+      </CanvasContainer>
+    ) : (
+      'loading...'
+    );
   }
 }
 
-render(<Demo />, document.querySelector('#demo'));
+function DemoHooks() {
+  const { canvasRef, togglePlay } = useCanvasScrubber({ frames });
+  return (
+    <CanvasContainer>
+      <button onClick={togglePlay}>toggle</button>
+      <canvas style={canvasStyle} ref={canvasRef} />
+    </CanvasContainer>
+  );
+}
+
+function App() {
+  return (
+    <div>
+      <nav>
+        <Link to="/">home</Link>
+        <Link to="/demo">demo</Link>
+      </nav>
+      <Router>
+        <Demo path="/" />
+        <DemoHooks path="/demo" />
+      </Router>
+    </div>
+  );
+}
+
+render(<App />, document.querySelector('#demo'));
