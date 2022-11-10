@@ -41,7 +41,7 @@
     "gh-pages": "^1.1.0",
     "husky": "^0.14.3",
     "lint-staged": "^7.1.0",
-    "nwb": "0.20.x"
+    "nwb": "0.25.x"
   },
   "author": "",
   "homepage": "",
